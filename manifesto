@@ -4,6 +4,7 @@ WORKING_DIRECTORY=$(pwd)
 CONFIG_FOLDER="$WORKING_DIRECTORY/.manifesto"
 manifesto_protocol="git@"
 manifesto_host="github.com:"
+manifesto_protocol="git@"
 manifesto_username="eyedeekay/"
 
 if [ ! -f "$CONFIG_FOLDER/config" ]; then
@@ -14,7 +15,7 @@ if [ ! -f "$CONFIG_FOLDER/config" ]; then
         printf "manifesto_host=\"$manifesto_host\"\n" | tee -a "$CONFIG_FOLDER/config"
         printf "manifesto_username=\"$manifesto_username\"\n" | tee -a "$CONFIG_FOLDER/config"
 else
-        . "/$CONFIG_FOLDER/config"
+        . "$CONFIG_FOLDER/config"
 fi
 
 add(){
