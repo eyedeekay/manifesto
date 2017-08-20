@@ -5,4 +5,4 @@ PREFIX = usr/local
 none:
 
 install:
-	install manifesto $(DESTDIR)$($PREFIX)/bin
+	install manifesto $(DESTDIR)$(PREFIX)/bin
