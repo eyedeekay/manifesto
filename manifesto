@@ -6,6 +6,16 @@ manifesto_protocol="git@"
 manifesto_host="github.com:"
 manifesto_username="eyedeekay/"
 
+if [ ! -f "$CONFIG_FOLDER/config" ]; then
+        printf "WORKING_DIRECTORY=$WORKING_DIRECTORY\n" | tee "$CONFIG_FOLDER/config"
+        printf "CONFIG_FOLDER=\"$CONFIG_FOLDER\"\n" | tee -a "$CONFIG_FOLDER/config"
+        printf "manifesto_protocol=\"$manifesto_protocl\"\n" | tee -a "$CONFIG_FOLDER/config"
+        printf "manifesto_host=\"$manifesto_host\"\n" | tee -a "$CONFIG_FOLDER/config"
+        printf "manifesto_username=\"$manifesto_username\"\n" | tee -a "$CONFIG_FOLDER/config"
+else
+        . "/$CONFIG_FOLDER/config"
+fi
+
 add(){
         printf "adding repostory: %s \n" "$1"
         cleaned_repository=$(echo "$1" \
@@ -13,14 +23,20 @@ add(){
                 | sed "s|$manifesto_host||" \
                 | sed "s|$manifesto_username||"
                 )
+        if [ -z "$2" ]; then
+                repo_origin="origin"
+        fi
+        if [ -z "$3" ]; then
+                repo_branch="master"
+        fi
         printf "$cleaned_repository-clone:\n" | tee "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         printf "\tgit clone $manifesto_protocol$manifesto_host$manifesto_username$cleaned_repository $cleaned_repository\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         printf "\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         printf "$cleaned_repository-push:\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
-        printf "\tcd $cleaned_repository || git add . ; git commit -am \" \$(commit_message)\$(date)\" ; git push\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "\tcd $cleaned_repository || git add . ; git commit -am \" \$(commit_message)\$(date)\" ; git push --set-upstream $repo_origin $repo_branch\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         printf "\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         printf "$cleaned_repository-pull:\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
-        printf "\tcd $cleaned_repository || git commit -am 'rebase' && git pull --rebase=interactive origin master \n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "\tcd $cleaned_repository || git commit -am 'rebase' && git pull --rebase=interactive $repo_origin $repo_branch\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         printf "\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         make -f "$CONFIG_FOLDER/mk/$cleaned_repository".mk
 }
@@ -89,7 +105,7 @@ elif [ "$1" = "-h" ]; then
 fi
 
 if [ "$1" = "add" ]; then
-        add $2
+        add $2 $3 $4
 fi
 
 if [ "$1" = "del" ]; then
