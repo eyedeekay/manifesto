@@ -1,0 +1,109 @@
+#! /usr/bin/env sh
+
+WORKING_DIRECTORY=$(pwd)
+CONFIG_FOLDER="$WORKING_DIRECTORY/.manifesto"
+manifesto_protocol="git@"
+manifesto_host="github.com:"
+manifesto_username="eyedeekay/"
+
+add(){
+        printf "adding repostory: %s \n" "$1"
+        cleaned_repository=$(echo "$1" \
+                | sed "s|$manifesto_protocol||" \
+                | sed "s|$manifesto_host||" \
+                | sed "s|$manifesto_username||"
+                )
+        printf "$cleaned_repository-clone:\n" | tee "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "\tgit clone $manifesto_protocol$manifesto_host$manifesto_username$cleaned_repository $cleaned_repository\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "$cleaned_repository-push:\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "\tcd $cleaned_repository || git add . ; git commit -am \" \$(commit_message)\$(date)\" ; git push\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "$cleaned_repository-pull:\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "\tcd $cleaned_repository || git commit -am 'rebase' && git pull --rebase=interactive origin master \n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        printf "\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        make -f "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+}
+
+del(){
+        printf "removing repostory: %s \n" "$1"
+        cleaned_repository=$(echo "$1" \
+                | sed "s|$manifesto_protocol||" \
+                | sed "s|$manifesto_host||" \
+                | sed "s|$manifesto_username||"
+                )
+        if [ -d "$WORKING_DIRECTORY/$cleaned_repository" ]; then
+                rm -rf "$WORKING_DIRECTORY/$cleaned_repository"
+        fi
+        if [ -f "$CONFIG_FOLDER/mk/$cleaned_repository.mk" ]; then
+                rm -f "$CONFIG_FOLDER/mk/$cleaned_repository.mk"
+        fi
+}
+
+pull(){
+        cleaned_repository=$(echo "$1" \
+                | sed "s|$manifesto_protocol||" \
+                | sed "s|$manifesto_host||" \
+                | sed "s|$manifesto_username||"
+                )
+        make -f "$CONFIG_FOLDER/mk/$cleaned_repository".mk $cleaned_repository-pull
+}
+
+push(){
+        cleaned_repository=$(echo "$1" \
+                | sed "s|$manifesto_protocol||" \
+                | sed "s|$manifesto_host||" \
+                | sed "s|$manifesto_username||"
+                )
+        export commit_message="$2"
+        make -f "$CONFIG_FOLDER/mk/$cleaned_repository".mk "$cleaned_repository-push"
+}
+
+init(){
+        printf "initializing manifesto settings: %s \n" "$1"
+        if [ ! -d "$CONFIG_FOLDER" ]; then
+                mkdir -p "$CONFIG_FOLDER"
+        fi
+        if [ ! -d "$CONFIG_FOLDER/mk" ]; then
+                mkdir -p "$CONFIG_FOLDER/mk"
+        fi
+}
+
+print_help(){
+        printf "Manifesto \n"
+        printf " \n"
+        printf "  add : \n"
+        printf "  del : \n"
+}
+
+if [ -z "$1" ]; then
+        print_help
+elif [ "$1" = "help" ]; then
+        print_help
+elif [ "$1" = "h" ]; then
+        print_help
+elif [ "$1" = "--help" ]; then
+        print_help
+elif [ "$1" = "-h" ]; then
+        print_help
+fi
+
+if [ "$1" = "add" ]; then
+        add $2
+fi
+
+if [ "$1" = "del" ]; then
+        del $2
+fi
+
+if [ "$1" = "push" ]; then
+        push $2 "$3"
+fi
+
+if [ "$1" = "pull" ]; then
+        pull $2 "$3"
+fi
+
+if [ "$1" = "init" ]; then
+        init $2
+fi
