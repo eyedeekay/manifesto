@@ -25,7 +25,7 @@ add(){
                 | sed "s|$manifesto_host||" \
                 | sed "s|$manifesto_username||"
                 )
-        printf "$cleaned_repository\n\n"
+        printf "$cleaned_repository\n"
         if [ -z "$2" ]; then
                 repo_origin="origin"
         fi
@@ -66,6 +66,14 @@ pull(){
                 | sed "s|$manifesto_username||"
                 )
         make -f "$CONFIG_FOLDER/mk/$cleaned_repository".mk "$cleaned_repository-pull"
+}
+
+update(){
+        for the_file in $(find "$CONFIG_FOLDER/mk/"); do
+                if [ -f "$the_file" ]; then
+                        make -f "$the_file" $(grep "\-pull" "$the_file" | tr -d ':')
+                fi
+        done
 }
 
 push(){
@@ -126,6 +134,10 @@ fi
 
 if [ "$1" = "pull" ]; then
         pull $2 "$3"
+fi
+
+if [ "$1" = "update" ]; then
+        update
 fi
 
 if [ "$1" = "init" ]; then
