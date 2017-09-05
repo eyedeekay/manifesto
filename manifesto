@@ -41,6 +41,9 @@ add(){
         echo  "$cleaned_repository-pull:\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         echo  "\tcd $cleaned_repository || git commit -am 'rebase' && git pull --rebase=interactive $repo_origin $repo_branch\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         echo  "\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        echo  "$cleaned_repository-build:\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        echo  "\tcd $cleaned_repository || . .manifesto.sh\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
+        echo  "\n" | tee -a "$CONFIG_FOLDER/mk/$cleaned_repository".mk
         make -f "$CONFIG_FOLDER/mk/$cleaned_repository".mk
 }
 
@@ -84,6 +87,23 @@ push(){
                 )
         export commit_message="$2"
         make -f "$CONFIG_FOLDER/mk/$cleaned_repository".mk "$cleaned_repository-push"
+}
+
+build(){
+        cleaned_repository=$(echo "$1" \
+                | sed "s|$manifesto_protocol||" \
+                | sed "s|$manifesto_host||" \
+                | sed "s|$manifesto_username||"
+                )
+        make -f "$CONFIG_FOLDER/mk/$cleaned_repository".mk "$cleaned_repository-build"
+}
+
+generate(){
+        for the_file in $(find "$CONFIG_FOLDER/mk/"); do
+                if [ -f "$the_file" ]; then
+                        make -f "$the_file" $(grep "\-build" "$the_file" | tr -d ':')
+                fi
+        done
 }
 
 init(){
@@ -138,6 +158,14 @@ fi
 
 if [ "$1" = "update" ]; then
         update
+fi
+
+if [ "$1" = "build" ]; then
+        build $2
+fi
+
+if [ "$1" = "generate" ]; then
+        generate
 fi
 
 if [ "$1" = "init" ]; then
